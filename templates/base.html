@@ -17,16 +17,16 @@
         {% block header %}
         <nav class="navbar navbar-dark bg-dark justify-content-between">
             <a class="navbar-brand">ticketingSystem</a>
-            <form class="form-inline">
-                <input class="form-control mr-sm-2" type="search" placeholder="Pretrazi" aria-label="Search">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Pretrazi</button>
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Login</button>
             </form>
         </nav>
         {% endblock %}
     </div>
     <!-- Footer -->
-    <div id="content">{% block content %}{% endblock %}</div>
-    <div id="footer">
+    <div id="content" class="content">
+        {% block content %} {% endblock %}
+    </div>
+    <div id="footer" class="footer mt-auto py-3">
         {% block footer %} &copy; Copyright 2020 by <a href="http://domain.invalid/">Janko Jovicic</a>. {% endblock %}
     </div>
 </body>
