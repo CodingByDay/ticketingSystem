@@ -1,31 +1,83 @@
 # Flask application for managing tickets
 from flask import Flask, escape, request, render_template, Response
+from functools import wraps
+import json
+from os import environ as env
+from werkzeug.exceptions import HTTPException
+from dotenv import load_dotenv, find_dotenv
+from flask import Flask
+from flask import jsonify
+from flask import redirect
+from flask import render_template
+from flask import session
+from flask import url_for
+from authlib.integrations.flask_client import OAuth
+from six.moves.urllib.parse import urlencode
 
-import flask
-
-# Setting an app
 app = Flask(__name__)
+app.secret_key = "Buda"
+oauth = OAuth(app)
 
-
+# Move to a config file!
+auth0 = oauth.register(
+    'auth0',
+    client_id='d0tUzHFPm9NFCbdFVX4zayglV0cE1NpA',
+    client_secret= 'E5x2haseAhyoRFbW-_sNGwE3l56noTC0ens3OB9brH3uroU7cUANNhV9bAytQQ6n',
+    api_base_url='https://ticketingsystem.eu.auth0.com',
+    access_token_url='https://ticketingsystem.eu.auth0.com/oauth/token',
+    authorize_url='https://ticketingsystem.eu.auth0.com/authorize',
+    client_kwargs={
+        'scope': 'openid profile email',
+    },
+)
 @app.route('/')
 def hello():
     name = "ticketingSystem"
-    return render_template('home.html', name=name)
-    
+    return render_template('home.html', name=name)  
 # Definicija rute za login
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/callback')
+def callback_handling():
+    # Handles response from token endpoint
+    auth0.authorize_access_token()
+    resp = auth0.get('userinfo')
+    userinfo = resp.json()
+    # Store the user information in flask session.
+    session['jwt_payload'] = userinfo
+    session['profile'] = {
+        'user_id': userinfo['sub'],
+        'name': userinfo['name'],
+        'picture': userinfo['picture']
+    }
+    return redirect('/dashboard')
+# Login ruta
+@app.route('/login')
 def login():
-    if flask.request.method == 'GET':
-        return render_template('login.html')
+    return auth0.authorize_redirect(redirect_uri='http://localhost:5000/callback')
 
-    email = flask.request.form['email']
-    if flask.request.form['password'] == users[email]['password']:
-        user = User() 
-        user.id = email
-        flask_login.login_user(user)
-        return flask.redirect(flask.url_for('protected'))
+def requires_auth(f):
+  @wraps(f)
+  def decorated(*args, **kwargs):
+    if 'profile' not in session:
+      # Redirect to Login page here
+      return redirect('/')
+    return f(*args, **kwargs)
 
-    return 'Bad login'    
+  return decorated
+
+@app.route('/dashboard')
+@requires_auth
+def dashboard():
+    return render_template('/dashboard/index.html',
+                           userinfo=session['profile'],
+                           userinfo_pretty=json.dumps(session['jwt_payload'], indent=4))
+@app.route('/logout')
+def logout():
+    # Clear session stored data
+    session.clear()
+    # Redirect user to logout endpoint
+    params = {'returnTo': url_for('home', _external=True), 'client_id': 'd0tUzHFPm9NFCbdFVX4zayglV0cE1NpA'}
+    return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
+
 
 
 
