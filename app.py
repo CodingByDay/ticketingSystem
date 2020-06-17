@@ -78,6 +78,10 @@ def logout():
     params = {'returnTo': url_for('home', _external=True), 'client_id': 'd0tUzHFPm9NFCbdFVX4zayglV0cE1NpA'}
     return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
 
+@app.route('/dashboard/tickets/new')
+def newticket():
+    return render_template('/dashboard/tickets/new.html')
+
 
 
 
